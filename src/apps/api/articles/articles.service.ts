@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ArticleService as DomainArticleService, CreateArticleDto, UpdateArticleDto } from '../../../libs/domain/article';
-import { FindArticlesParams } from '../../../libs/repositories/article/article.repository';
+import { FindArticlesParams } from '../../../libs/repositories/article';
 
 @Injectable()
 export class ArticlesService {

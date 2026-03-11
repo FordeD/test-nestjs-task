@@ -5,8 +5,8 @@ import { typeOrmConfig } from '../../libs/config/typeorm.config';
 import { CacheModule } from '../../libs/redis/cache.module';
 import { AuthModule } from './auth/auth.module';
 import { ArticlesModule } from './articles/articles.module';
-import { User } from '../../libs/domain/user/user.entity';
-import { Article } from '../../libs/domain/article/article.entity';
+import { User } from '../../libs/repositories/user/user.entity';
+import { Article } from '../../libs/repositories/article/article.entity';
 
 @Module({
   imports: [

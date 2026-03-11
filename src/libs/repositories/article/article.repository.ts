@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, FindOptionsWhere, Like, Repository } from 'typeorm';
-import { Article } from '../../domain/article/article.entity';
+import { Article } from './article.entity';
 
 export interface FindArticlesParams {
   page?: number;

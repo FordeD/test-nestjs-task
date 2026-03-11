@@ -1,4 +1,6 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { User } from '../repositories/user/user.entity';
+import { Article } from '../repositories/article/article.entity';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -7,7 +9,7 @@ export const dataSourceOptions: DataSourceOptions = {
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'nestjs_api',
-  entities: ['src/libs/domain/**/*.entity{.ts,.js}'],
+  entities: [User, Article],
   migrations: ['src/migrations/*{.ts,.js}'],
   migrationsTableName: 'migrations',
   logging: ['query', 'error', 'schema', 'migration'],
