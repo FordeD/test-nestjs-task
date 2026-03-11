@@ -32,6 +32,11 @@ import { CreateArticleDto, PaginationQueryDto, UpdateArticleDto } from './dto';
 export class ArticlesController {
   constructor(private articlesService: ArticlesService) {}
 
+  /**
+   * Создание новой статьи
+   * Доступно только авторизованным пользователям
+   * Автор статьи определяется из JWT токена
+   */
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -57,6 +62,7 @@ export class ArticlesController {
   })
   @ApiResponse({ status: 401, description: 'Требуется авторизация' })
   async create(@Body() dto: CreateArticleDto, @Request() req) {
+    // Автор статьи берётся из декодированного JWT токена
     return this.articlesService.create({
       title: dto.title,
       description: dto.description,
@@ -65,8 +71,13 @@ export class ArticlesController {
     });
   }
 
+  /**
+   * Получение списка статей с пагинацией и фильтрацией
+   * Поддерживает фильтры: по автору, статусу публикации, дате, поиску
+   * Результат кэшируется в Redis
+   */
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Получить список статей с пагинацией и фильтрацией',
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Номер страницы' })
@@ -102,6 +113,10 @@ export class ArticlesController {
     });
   }
 
+  /**
+   * Получение статьи по ID
+   * Результат кэшируется в Redis по ключу article:{id}
+   */
   @Get(':id')
   @ApiOperation({ summary: 'Получить статью по ID' })
   @ApiParam({ name: 'id', description: 'ID статьи', example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -111,6 +126,11 @@ export class ArticlesController {
     return this.articlesService.findOne(id);
   }
 
+  /**
+   * Обновление статьи
+   * Доступно только автору статьи
+   * При обновлении инвалидируется весь кэш и кэш конкретной статьи
+   */
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -122,9 +142,15 @@ export class ArticlesController {
   @ApiResponse({ status: 403, description: 'Только автор может редактировать статью' })
   @ApiResponse({ status: 404, description: 'Статья не найдена' })
   async update(@Param('id') id: string, @Body() dto: UpdateArticleDto, @Request() req) {
+    // Передаём ID пользователя из токена для проверки прав доступа
     return this.articlesService.update(id, dto, req.user.userId);
   }
 
+  /**
+   * Удаление статьи
+   * Доступно только автору статьи
+   * При удалении инвалидируется весь кэш и кэш конкретной статьи
+   */
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -136,6 +162,7 @@ export class ArticlesController {
   @ApiResponse({ status: 404, description: 'Статья не найдена' })
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: string, @Request() req) {
+    // Передаём ID пользователя из токена для проверки прав доступа
     return this.articlesService.remove(id, req.user.userId);
   }
 }

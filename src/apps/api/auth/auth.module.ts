@@ -10,6 +10,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   imports: [
     UserModule,
     PassportModule,
+    // JWT модуль с настройкой секрета и времени жизни токена
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secret',
       signOptions: { expiresIn: '1h' },

@@ -6,6 +6,7 @@ import { CacheService } from './cache.service';
 @Global()
 @Module({
   imports: [
+    // Асинхронная регистрация кэша с использованием Redis
     NestCacheModule.registerAsync({
       isGlobal: true,
       useFactory: redisConfig,

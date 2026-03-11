@@ -16,10 +16,14 @@ import { RegisterDto, LoginDto, RefreshTokenDto, TokensResponseDto } from './dto
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  /**
+   * Регистрация нового пользователя
+   * Принимает email, пароль и имя, возвращает пару access/refresh токенов
+   */
   @Post('register')
   @ApiOperation({ summary: 'Регистрация нового пользователя' })
   @ApiBody({ type: RegisterDto })
-  @ApiResponse({ 
+  @ApiResponse({
     status: 201,
     description: 'Пользователь успешно зарегистрирован',
     schema: { $ref: getSchemaPath(TokensResponseDto) },
@@ -30,10 +34,14 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
+  /**
+   * Аутентификация пользователя по email и паролю
+   * Возвращает пару access/refresh токенов при успешном входе
+   */
   @Post('login')
   @ApiOperation({ summary: 'Вход в систему' })
   @ApiBody({ type: LoginDto })
-  @ApiResponse({ 
+  @ApiResponse({
     status: 200,
     description: 'Успешный вход',
     schema: { $ref: getSchemaPath(TokensResponseDto) },
@@ -44,10 +52,14 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  /**
+   * Обновление access токена с использованием refresh токена
+   * Refresh токен имеет длительный срок жизни (7 дней)
+   */
   @Post('refresh')
   @ApiOperation({ summary: 'Обновление access токена через refresh токен' })
   @ApiBody({ type: RefreshTokenDto })
-  @ApiResponse({ 
+  @ApiResponse({
     status: 200,
     description: 'Токены обновлены',
     schema: { $ref: getSchemaPath(TokensResponseDto) },

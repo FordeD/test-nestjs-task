@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CacheService } from '../../redis/cache.service';
-import { ArticleRepository, FindArticlesParams, PaginatedResult } from '../../repositories/article/article.repository';
+import { ArticleRepository } from '../../repositories/article/article.repository';
+import { FindArticlesParams, PaginatedResult } from '../../types';
 
 export interface CreateArticleDto {
   title: string;
@@ -16,6 +17,10 @@ export interface UpdateArticleDto {
   published: boolean;
 }
 
+/**
+ * Доменный сервис для управления статьями
+ * Содержит основную бизнес-логику и кэширование
+ */
 @Injectable()
 export class ArticleService {
   constructor(
@@ -23,6 +28,10 @@ export class ArticleService {
     private cacheService: CacheService,
   ) {}
 
+  /**
+   * Создание новой статьи
+   * После создания инвалидирует весь кэш
+   */
   async create(dto: CreateArticleDto) {
     const article = await this.articleRepository.create(
       dto.title,
@@ -34,19 +43,34 @@ export class ArticleService {
     return article;
   }
 
+  /**
+   * Получение списка статей с пагинацией и фильтрацией
+   * Использует кэширование: сначала проверяет Redis, при отсутствии - запрос в БД
+   * Ключ кэша формируется динамически на основе параметров запроса
+   * TTL кэша - 300 секунд (5 минут)
+   */
   async findAll(params: FindArticlesParams): Promise<PaginatedResult<any>> {
+    // Формирование уникального ключа кэша на основе параметров
     const cacheKey = this.getCacheKey('articles:list', params);
 
+    // Проверка наличия данных в кэше
     const cached = await this.cacheService.get<PaginatedResult<any>>(cacheKey);
     if (cached) {
       return cached;
     }
 
+    // Запрос к репозиторию при отсутствии в кэше
     const result = await this.articleRepository.findAll(params);
+    // Сохранение результата в кэш
     await this.cacheService.set(cacheKey, result, 300);
     return result;
   }
 
+  /**
+   * Получение статьи по ID
+   * Использует кэширование по ключу article:{id}
+   * TTL кэша - 300 секунд (5 минут)
+   */
   async findById(id: string) {
     const cacheKey = `article:${id}`;
     const cached = await this.cacheService.get<any>(cacheKey);
@@ -63,13 +87,21 @@ export class ArticleService {
     return article;
   }
 
+  /**
+   * Обновление статьи
+   * Проверяет права доступа - только автор может редактировать
+   * При публикации устанавливает текущую дату в publishedAt
+   * Инвалидирует весь кэш и кэш конкретной статьи
+   */
   async update(id: string, dto: UpdateArticleDto, userId: string) {
     const article = await this.findById(id);
 
+    // Проверка: только автор может редактировать статью
     if (article.authorId !== userId) {
       throw new ForbiddenException('You can only update your own articles');
     }
 
+    // Установка даты публикации при включении флага published
     const publishedAt = dto.published ? new Date() : (article.publishedAt || null);
     const updatedArticle = await this.articleRepository.update(
       id,
@@ -83,15 +115,22 @@ export class ArticleService {
       throw new NotFoundException(`Article with ID ${id} not found`);
     }
 
+    // Инвалидация кэша после обновления
     await this.cacheService.invalidateAll();
     await this.cacheService.del(`article:${id}`);
     
     return updatedArticle;
   }
 
+  /**
+   * Удаление статьи
+   * Проверяет права доступа - только автор может удалять
+   * Инвалидирует весь кэш и кэш конкретной статьи
+   */
   async delete(id: string, userId: string) {
     const article = await this.findById(id);
 
+    // Проверка: только автор может удалять статью
     if (article.authorId !== userId) {
       throw new ForbiddenException('You can only delete your own articles');
     }
@@ -102,10 +141,10 @@ export class ArticleService {
     await this.cacheService.del(`article:${id}`);
   }
 
-  async findByAuthorId(authorId: string) {
-    return this.articleRepository.findByAuthorId(authorId);
-  }
-
+  /**
+   * Формирование уникального ключа кэша на основе параметров запроса
+   * Используется для кэширования результатов поиска с фильтрами
+   */
   private getCacheKey(prefix: string, params: FindArticlesParams): string {
     const parts = [prefix];
     if (params.page) parts.push(`p${params.page}`);

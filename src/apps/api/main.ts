@@ -6,8 +6,13 @@ import { ArticleResponseDto, CreateArticleDto, PaginatedArticlesResponseDto, Upd
 import { LoginDto, RefreshTokenDto, RegisterDto, TokensResponseDto } from './auth/dto';
 
 async function bootstrap() {
+  // Создание экземпляра NestJS приложения
   const app = await NestFactory.create(AppModule);
 
+  // Глобальная настройка валидации DTO
+  // whitelist - удаляет свойства, не указанные в DTO
+  // forbidNonWhitelisted - выбрасывает ошибку при наличии лишних свойств
+  // transform - автоматически преобразует типы данных
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -16,12 +21,14 @@ async function bootstrap() {
     }),
   );
 
+  // Настройка Swagger документации
   const config = new DocumentBuilder()
     .setTitle('Test NestJS API')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth() // Добавляет кнопку авторизации с JWT токеном
     .build();
 
+  // Генерация документа Swagger с дополнительными моделями DTO
   const document = SwaggerModule.createDocument(app, config, {
     extraModels: [
       RegisterDto,
@@ -35,6 +42,8 @@ async function bootstrap() {
     ],
   });
 
+  // Размещение Swagger UI по пути /api/docs
+  // persistAuthorization - сохраняет токен при перезагрузке страницы
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
@@ -42,6 +51,7 @@ async function bootstrap() {
     customSiteTitle: 'NestJS API Docs',
   });
 
+  // Запуск сервера на указанном порту
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);

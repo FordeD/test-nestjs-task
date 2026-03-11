@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserService, RegisterUserDto, LoginUserDto } from '../../../libs/domain/user';
+import { UserService } from '../../../libs/domain/user';
+import { LoginUserDto, RegisterUserDto } from '../../../libs/types';
 
 @Injectable()
 export class AuthService {
@@ -19,12 +20,19 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
+  /**
+   * Обновление пары токенов с использованием refresh токена
+   * Верифицирует refresh токен и получает данные пользователя из payload
+   * При неудачной верификации выбрасывает UnauthorizedException
+   */
   async refreshTokens(refreshToken: string) {
     try {
+      // Верификация refresh токена с использованием отдельного секрета
       const payload = this.jwtService.verify(refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret',
       });
 
+      // Получение данных пользователя по ID из токена
       const user = await this.userService.getById(payload.sub);
       return this.generateTokens(user);
     } catch {
@@ -36,8 +44,14 @@ export class AuthService {
     return this.userService.getById(userId);
   }
 
+  /**
+   * Генерация пары access и refresh токенов
+   * Access токен - короткоживущий (15 минут) для авторизации запросов
+   * Refresh токен - долгоживущий (7 дней) для обновления access токена
+   */
   private generateTokens(user: { id: string; email: string }) {
     const [accessToken, refreshToken] = [
+      // Access токен с коротким временем жизни
       this.jwtService.sign(
         { sub: user.id, email: user.email },
         {
@@ -45,6 +59,7 @@ export class AuthService {
           expiresIn: '15m', // Короткий TTL для access токена
         },
       ),
+      // Refresh токен с длительным временем жизни
       this.jwtService.sign(
         { sub: user.id, email: user.email },
         {

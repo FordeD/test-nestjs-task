@@ -6,6 +6,12 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 export class CacheService {
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
+  /**
+   * Получение данных из кэша по ключу
+   * Возвращает null если ключ не найден или произошла ошибка
+   * @param key - ключ кэша
+   * @returns данные или null
+   */
   async get<T>(key: string): Promise<T | null> {
     try {
       const value = await this.cacheManager.get<T>(key);
@@ -15,6 +21,12 @@ export class CacheService {
     }
   }
 
+  /**
+   * Установка данных в кэш
+   * @param key - ключ кэша
+   * @param value - сохраняемые данные
+   * @param ttl - время жизни в секундах (по умолчанию используется настройка Redis)
+   */
   async set(key: string, value: any, ttl?: number): Promise<void> {
     try {
       await this.cacheManager.set(key, value, ttl ? ttl * 1000 : undefined);
@@ -23,6 +35,10 @@ export class CacheService {
     }
   }
 
+  /**
+   * Удаление данных из кэша по ключу
+   * @param key - ключ кэша
+   */
   async del(key: string): Promise<void> {
     try {
       await this.cacheManager.del(key);
@@ -33,6 +49,8 @@ export class CacheService {
 
   /**
    * Полная инвалидация всего кэша
+   * Используется при создании/обновлении/удалении статей
+   * Поддерживает различные методы очистки в зависимости от реализации хранилища
    */
   async invalidateAll(): Promise<void> {
     try {
@@ -66,6 +84,8 @@ export class CacheService {
 
   /**
    * Очистка кэша через Redis SCAN
+   * Используется как fallback метод для постепенного удаления ключей
+   * Сканирует все ключи пачками по 100 штук
    */
   private async clearCacheByScan(store: any): Promise<void> {
     const keys: string[] = await new Promise((resolve, reject) => {
@@ -87,6 +107,7 @@ export class CacheService {
       store.scan('0', 'MATCH', '*', 'COUNT', '100', scanCallback);
     });
 
+    // Последовательное удаление всех найденных ключей
     for (const key of keys) {
       await this.cacheManager.del(key);
     }

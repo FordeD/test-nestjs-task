@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ArticleService as DomainArticleService, CreateArticleDto, UpdateArticleDto } from '../../../libs/domain/article';
-import { FindArticlesParams } from '../../../libs/repositories/article';
+import { FindArticlesParams } from '../../../libs/types';
 
 @Injectable()
 export class ArticlesService {
@@ -24,9 +24,5 @@ export class ArticlesService {
 
   async remove(id: string, userId: string) {
     return this.articleDomainService.delete(id, userId);
-  }
-
-  async findByAuthor(authorId: string) {
-    return this.articleDomainService.findByAuthorId(authorId);
   }
 }

@@ -15,4 +15,5 @@ export const dataSourceOptions: DataSourceOptions = {
   logging: ['query', 'error', 'schema', 'migration'],
 };
 
+// Экспорт экземпляра DataSource для использования в скриптах миграции
 export const AppDataSource = new DataSource(dataSourceOptions);

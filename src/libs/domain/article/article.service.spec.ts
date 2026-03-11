@@ -294,28 +294,4 @@ describe('ArticleService', () => {
         .rejects.toThrow(NotFoundException);
     });
   });
-
-  describe('findByAuthorId', () => {
-    const mockArticles = [
-      { id: '1', title: 'Article 1', authorId: 'author-uuid' },
-      { id: '2', title: 'Article 2', authorId: 'author-uuid' },
-    ];
-
-    it('should return articles by author', async () => {
-      mockArticleRepository.findByAuthorId.mockResolvedValue(mockArticles);
-
-      const result = await service.findByAuthorId('author-uuid');
-
-      expect(articleRepository.findByAuthorId).toHaveBeenCalledWith('author-uuid');
-      expect(result).toEqual(mockArticles);
-    });
-
-    it('should return empty array if author has no articles', async () => {
-      mockArticleRepository.findByAuthorId.mockResolvedValue([]);
-
-      const result = await service.findByAuthorId('author-uuid');
-
-      expect(result).toEqual([]);
-    });
-  });
 });
